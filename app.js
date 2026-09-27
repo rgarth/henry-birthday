@@ -142,8 +142,10 @@ function finishRoll(roll) {
   }, 400);
 }
 
+const FORCED_ROLL = 19;
+
 function fallbackRoll() {
-  finishRoll(1 + Math.floor(Math.random() * 20));
+  finishRoll(FORCED_ROLL);
 }
 
 function throwPhysicalD20() {
@@ -161,7 +163,7 @@ function throwPhysicalD20() {
       try {
         const box = new window.DICE.dice_box(diceBoxEl);
         box.setDice("1d20");
-        box.start_throw(null, (notation) => {
+        box.start_throw(() => [FORCED_ROLL], (notation) => {
           const roll = Number(notation?.resultTotal ?? notation?.result?.[0]);
           if (!Number.isFinite(roll) || roll <= 0) {
             closeDiceOverlay();
@@ -283,13 +285,13 @@ function showOathStatus(message, isError) {
   oathStatus.classList.toggle("is-error", Boolean(isError));
 }
 
-function mailtoFallback(name, klass, answer) {
+function mailtoFallback(name, email, phone, klass, answer) {
   if (!PARTY.rsvpEmail) {
     return;
   }
   const subject = encodeURIComponent(`RSVP for ${PARTY.honoree} — ${name}`);
   const body = encodeURIComponent(
-    `${name}\nClass: ${klass}\nAnswer: ${answerLabel(answer)}\n\n${PARTY.dateLabel}, ${PARTY.year}`
+    `${name}\nEmail: ${email}\nPhone: ${phone}\nClass: ${klass}\nAnswer: ${answerLabel(answer)}\n\n${PARTY.dateLabel}, ${PARTY.year}`
   );
   window.location.href = `mailto:${PARTY.rsvpEmail}?subject=${subject}&body=${body}`;
 }
@@ -311,11 +313,13 @@ async function postRsvp(destination, payload) {
 async function submitOath(event) {
   event.preventDefault();
   const name = document.getElementById("guest-name").value.trim();
+  const email = document.getElementById("guest-email").value.trim();
+  const phone = document.getElementById("guest-phone").value.trim();
   const klass = document.getElementById("guest-class").value;
   const trap = document.getElementById("guest-trap").value.trim();
   const selected = oathForm.elements.namedItem("answer");
   const answer = selected instanceof RadioNodeList ? selected.value : "";
-  const record = { name, klass, answer, at: new Date().toISOString() };
+  const record = { name, email, phone, klass, answer, at: new Date().toISOString() };
   window.localStorage.setItem("henry-oath", JSON.stringify(record));
 
   if (trap) {
@@ -327,11 +331,14 @@ async function submitOath(event) {
   const destination = rsvpDestination();
   const payload = {
     name,
+    email,
+    phone,
     class: klass,
     answer: answerLabel(answer),
     night: `${PARTY.dateLabel}, ${PARTY.year}`,
+    _replyto: email,
     _subject: `RSVP for ${PARTY.honoree} — ${name}`,
-    message: `${name} (${klass}): ${answerLabel(answer)}`,
+    message: `${name} (${klass}): ${answerLabel(answer)}\nEmail: ${email}\nPhone: ${phone}`,
   };
 
   oathSubmit.disabled = true;
@@ -344,7 +351,10 @@ async function submitOath(event) {
     await postRsvp(destination, payload);
     vow.hidden = false;
     vow.textContent = `${answerCopy(answer, name, klass)} A raven has taken word to the host.`;
-    showOathStatus("The host has received your oath.", false);
+    showOathStatus(
+      "The host has received your oath. The hour and the door will follow by raven.",
+      false
+    );
     oathForm.querySelectorAll("input, select, button").forEach((node) => {
       node.disabled = true;
     });
@@ -356,7 +366,7 @@ async function submitOath(event) {
         "The raven faltered. Your mail app will open so you can send the oath yourself.",
         true
       );
-      mailtoFallback(name, klass, answer);
+      mailtoFallback(name, email, phone, klass, answer);
     } else {
       showOathStatus(
         "The oath is spoken here, but the host has not bound a raven yet. Tell them by other means.",
