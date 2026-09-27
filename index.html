@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A sealed missive. Henry turns 19. The undead must be vanquished on Friday the 13th of November."
+    />
+    <title>A Sealed Missive — Henry, 19 Winters</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#oath">Skip to the oath</a>
+
+    <div class="atmosphere" aria-hidden="true">
+      <div class="fog fog-a"></div>
+      <div class="fog fog-b"></div>
+      <div class="vignette"></div>
+      <canvas id="embers" class="embers"></canvas>
+      <div class="grain"></div>
+    </div>
+
+    <nav class="journal" aria-label="Campaign chapters">
+      <ol>
+        <li><a href="#missive">I. Missive</a></li>
+        <li><a href="#house">II. House</a></li>
+        <li><a href="#investigation">III. Investigate</a></li>
+        <li><a href="#quest" data-locked>IV. Quest</a></li>
+        <li><a href="#chosen" data-locked>V. Chosen</a></li>
+        <li><a href="#oath" data-locked>VI. Oath</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <section class="panel hero" id="missive">
+        <p class="eyebrow">A sealed missive has found you</p>
+        <h1>
+          You have been
+          <em>summoned</em>
+        </h1>
+        <button class="seal" id="break-seal" type="button" aria-describedby="seal-hint">
+          <span class="seal-wax">
+            <span class="seal-skull" aria-hidden="true">☠</span>
+          </span>
+          <span class="seal-label">Break the seal</span>
+        </button>
+        <p class="hint" id="seal-hint">Then scroll, if you dare</p>
+      </section>
+
+      <section class="panel scroll-panel" id="parchment">
+        <figure class="scroll-figure">
+          <img
+            src="assets/sealed-scroll.png"
+            alt="An aged parchment scroll with a cracked red wax skull seal"
+          />
+          <figcaption>
+            The wax yields. The ink is older than the hand that sent it.
+          </figcaption>
+        </figure>
+        <div class="copy">
+          <p class="chapter-mark">The opening</p>
+          <h2>Traveler,</h2>
+          <p>
+            This letter did not travel by honest post. It found the cracks in
+            your door, the pause in your sleep, the moment you were already
+            listening.
+          </p>
+          <p>
+            You are expected at a house that has been waiting longer than any
+            of its graves.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel manor-panel" id="house">
+        <div class="manor-stage">
+          <img
+            class="manor"
+            src="assets/haunted-manor.png"
+            alt="A Gothic haunted manor at night, one window glowing green above a graveyard"
+          />
+          <div class="manor-veil"></div>
+        </div>
+        <div class="manor-copy">
+          <p class="chapter-mark">The approach</p>
+          <h2>Welcome to the house that watches</h2>
+          <p>
+            Dead trees bow toward the gate. The path remembers every guest who
+            came this way and did not leave the same.
+          </p>
+          <p>
+            A single window burns with a color that is not fire. Something in
+            the cellar turns over in its sleep.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel threshold-panel" id="threshold">
+        <figure class="threshold-figure">
+          <img
+            src="assets/cellar-threshold.png"
+            alt="Stone cellar stairs descending toward a figure stirring in green light"
+          />
+        </figure>
+        <div class="copy">
+          <p class="chapter-mark">The threshold</p>
+          <h2>The door yields without a key</h2>
+          <p>
+            Dust hangs like breath. Candle smoke writes letters that vanish when
+            you look at them directly. Footprints mark the stairs that were not
+            there a moment ago.
+          </p>
+          <p class="pull">
+            If you would know why you were summoned, the house requires a check.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel investigate-panel" id="investigation">
+        <div class="table">
+          <div class="table-copy">
+            <p class="chapter-mark">Skill check</p>
+            <h2>Roll for Investigation</h2>
+            <p>
+              The air tastes of iron and old magic. Beneath the floorboards,
+              something older than the house is listening for your luck.
+            </p>
+            <p class="dice-note" id="dice-status">
+              The same bones Henry casts at the table. Speak your intent, then
+              roll.
+            </p>
+          </div>
+          <div class="dice-well">
+            <div class="dice-stage">
+              <img
+                id="dice-img"
+                class="dice-img"
+                src="assets/bone-d20.png"
+                alt="A carved bone twenty-sided die"
+              />
+              <p class="dice-face" id="dice-face" hidden></p>
+            </div>
+            <button id="roll-btn" type="button">Roll d20</button>
+          </div>
+        </div>
+        <article class="journal-entry" id="journal-entry" hidden>
+          <p class="chapter-mark" id="roll-title"></p>
+          <p id="roll-body"></p>
+        </article>
+      </section>
+
+      <div id="aftermath" class="aftermath" hidden>
+        <section class="panel quest-panel" id="quest">
+          <figure class="full-bleed">
+            <img
+              src="assets/undead-rise.png"
+              alt="A lich and skeletal undead rising in a ruined ballroom"
+            />
+          </figure>
+          <div class="copy">
+            <p class="chapter-mark">The quest</p>
+            <h2>Vanquish the undead</h2>
+            <p>
+              On
+              <strong id="quest-date">Friday the 13th of November</strong>,
+              the veil thins. The dead will take the floor as if the dance never
+              ended. They must be put down before the night claims the living.
+            </p>
+            <p>
+              This is not a metaphor the house will forgive. It is a gathering,
+              a hunt, and a birthday written in bone.
+            </p>
+          </div>
+        </section>
+
+        <section class="panel chosen-panel" id="chosen">
+          <figure class="portrait">
+            <img
+              src="assets/the-chosen.png?v=long-blonde"
+              alt="A young adventurer with a lantern facing a horde of undead"
+            />
+          </figure>
+          <div class="copy">
+            <p class="chapter-mark">The chosen</p>
+            <h2>
+              <span id="chosen-name">Henry</span>
+              has been chosen to bear the burden
+            </h2>
+            <p>
+              <span id="chosen-age">Nineteen</span>
+              winters he has walked the mortal world. On this night he comes of
+              a darker age. The house named him. The dead already know his
+              step.
+            </p>
+            <p class="pull">The party is short. The night is not.</p>
+            <p class="question">Will you join him?</p>
+          </div>
+        </section>
+
+        <section class="panel oath-panel" id="oath">
+          <div class="invite-card">
+            <p class="chapter-mark">The gathering</p>
+            <h2>Swear your place in the party</h2>
+            <dl class="details">
+              <div>
+                <dt>The night</dt>
+                <dd id="detail-date">Friday the 13th of November</dd>
+              </div>
+              <div>
+                <dt>The hour</dt>
+                <dd id="detail-time">Dusk</dd>
+              </div>
+              <div>
+                <dt>The house</dt>
+                <dd id="detail-place">
+                  The gathering place will be sent to those who swear the oath
+                </dd>
+              </div>
+            </dl>
+
+            <form id="oath-form" class="oath-form">
+              <label>
+                Your true name
+                <input
+                  id="guest-name"
+                  name="name"
+                  type="text"
+                  autocomplete="name"
+                  required
+                  maxlength="80"
+                  placeholder="Speak it"
+                />
+              </label>
+              <label>
+                The class you bring
+                <select id="guest-class" name="klass">
+                  <option value="Whatever the night requires">
+                    Whatever the night requires
+                  </option>
+                  <option>Barbarian</option>
+                  <option>Bard</option>
+                  <option>Cleric</option>
+                  <option>Druid</option>
+                  <option>Fighter</option>
+                  <option>Monk</option>
+                  <option>Paladin</option>
+                  <option>Ranger</option>
+                  <option>Rogue</option>
+                  <option>Sorcerer</option>
+                  <option>Warlock</option>
+                  <option>Wizard</option>
+                </select>
+              </label>
+              <fieldset>
+                <legend>Your answer</legend>
+                <label class="choice">
+                  <input type="radio" name="answer" value="yes" required />
+                  I will stand with Henry
+                </label>
+                <label class="choice">
+                  <input type="radio" name="answer" value="maybe" />
+                  I am still reading the omens
+                </label>
+                <label class="choice">
+                  <input type="radio" name="answer" value="no" />
+                  The shadows keep me
+                </label>
+              </fieldset>
+              <label class="honey" aria-hidden="true">
+                Leave this empty
+                <input
+                  id="guest-trap"
+                  name="_gotcha"
+                  type="text"
+                  tabindex="-1"
+                  autocomplete="off"
+                />
+              </label>
+              <button type="submit" id="oath-submit">Seal the oath</button>
+            </form>
+
+            <p class="host-line" id="host-line" hidden></p>
+            <p class="oath-status" id="oath-status" hidden></p>
+            <div class="vow" id="vow" hidden></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="dice-overlay" class="dice-overlay" aria-hidden="true">
+      <div id="dice-box" class="dice-box"></div>
+    </div>
+
+    <script src="vendor/three.min.js"></script>
+    <script src="vendor/cannon.min.js"></script>
+    <script src="vendor/dice.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

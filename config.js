@@ -1,0 +1,15 @@
+const PARTY = {
+  honoree: "Henry",
+  age: 19,
+  dateLabel: "Friday the 13th of November",
+  year: 2026,
+  time: "Dusk",
+  locationName: "The gathering place will be sent to those who swear the oath",
+  address: "",
+  hostName: "",
+  rsvpEmail: "rgarth@gmail.com",
+  rsvpPhone: "",
+  formEndpoint: "",
+  diceColor: "#202020",
+  diceLabelColor: "#c4a15a",
+};
