@@ -127,6 +127,7 @@ function closeDiceOverlay() {
 }
 
 function finishRoll(roll) {
+  const firstTell = !window.localStorage.getItem("henry-investigation");
   diceImage.classList.add("is-hidden");
   diceFace.hidden = false;
   diceFace.textContent = String(roll);
@@ -134,12 +135,15 @@ function finishRoll(roll) {
   rollTitle.textContent = result.title;
   rollBody.textContent = result.body;
   journalEntry.hidden = false;
-  diceStatus.textContent = "The check is made. The story will not wait.";
+  diceStatus.textContent = "The check is made. Roll again, if the house allows it.";
   unlockAftermath();
   window.localStorage.setItem("henry-investigation", String(roll));
-  window.setTimeout(() => {
-    document.getElementById("quest").scrollIntoView({ behavior: "smooth" });
-  }, 400);
+  rollButton.disabled = false;
+  if (firstTell) {
+    window.setTimeout(() => {
+      document.getElementById("quest").scrollIntoView({ behavior: "smooth" });
+    }, 400);
+  }
 }
 
 const FORCED_ROLL = 19;
