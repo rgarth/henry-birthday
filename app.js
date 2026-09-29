@@ -152,15 +152,25 @@ function fallbackRoll() {
   finishRoll(FORCED_ROLL);
 }
 
+function failRoll(error) {
+  console.error(error);
+  closeDiceOverlay();
+  rollButton.disabled = false;
+  diceStatus.textContent = error instanceof Error ? error.message : String(error);
+}
+
 function throwPhysicalD20() {
   configureTableDice();
   openDiceOverlay();
 
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => {
-      if (!diceBoxEl.clientWidth || !diceBoxEl.clientHeight || !window.DICE) {
-        closeDiceOverlay();
-        fallbackRoll();
+      if (!diceBoxEl.clientWidth || !diceBoxEl.clientHeight) {
+        failRoll(new Error("The table has no room for the die."));
+        return;
+      }
+      if (!window.DICE) {
+        failRoll(new Error("The dice library did not load."));
         return;
       }
 
@@ -169,9 +179,8 @@ function throwPhysicalD20() {
         box.setDice("1d20");
         box.start_throw(() => [FORCED_ROLL], (notation) => {
           const roll = Number(notation?.resultTotal ?? notation?.result?.[0]);
-          if (!Number.isFinite(roll) || roll <= 0) {
-            closeDiceOverlay();
-            fallbackRoll();
+          if (roll !== FORCED_ROLL) {
+            failRoll(new Error(`The die showed ${roll}, not ${FORCED_ROLL}.`));
             return;
           }
           window.setTimeout(() => {
@@ -180,9 +189,7 @@ function throwPhysicalD20() {
           }, 1800);
         });
       } catch (error) {
-        console.warn("The die refused the table:", error);
-        closeDiceOverlay();
-        fallbackRoll();
+        failRoll(error);
       }
     });
   });

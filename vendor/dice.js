@@ -415,6 +415,9 @@ const DICE = (function() {
             if (interact.body != undefined) {
                 interact.position.copy(interact.body.position);
                 interact.quaternion.copy(interact.body.quaternion);
+                if (interact.face_align) {
+                    interact.quaternion.multiply(interact.face_align);
+                }
             }
         }
         this.renderer.render(this.scene, this.camera);
@@ -463,7 +466,7 @@ const DICE = (function() {
             var res = this.emulate_throw();
             this.prepare_dices_for_roll(vectors);
             for (var i in res)
-                shift_dice_faces(this.dices[i], values[i], res[i]);
+                align_dice_face(this.dices[i], values[i], res[i]);
         }
         this.callback = callback;
         this.running = (new Date()).getTime();
@@ -707,7 +710,123 @@ const DICE = (function() {
                 [1, 5, 9, 6], [5, 11, 4, 7], [11, 10, 2, 8], [10, 7, 6, 9], [7, 1, 8, 10],
                 [3, 9, 4, 11], [3, 4, 2, 12], [3, 2, 6, 13], [3, 6, 8, 14], [3, 8, 9, 15],
                 [4, 9, 5, 16], [2, 4, 11, 17], [6, 2, 10, 18], [8, 6, 7, 19], [9, 8, 1, 20]];
+        number_d20_canonically(faces, vertices);
         return create_geom(vertices, faces, radius, -0.2, -Math.PI / 4 / 2, 0.955);
+    }
+
+    // Chessex-style d20: opposites sum to 21, and 2/8/14 sit on the three
+    // faces that share an edge with 20. Even numbers occupy the 20 hemisphere.
+    function number_d20_canonically(faces, vertices) {
+        var n = faces.length;
+
+        function faceVerts(i) {
+            return faces[i].slice(0, 3);
+        }
+
+        function oppositeIndex(i) {
+            var antipode = [3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8];
+            var vi = faceVerts(i).map(function (v) {
+                return antipode[v];
+            }).sort(function (a, b) {
+                return a - b;
+            });
+            for (var j = 0; j < n; j++) {
+                var vj = faceVerts(j).slice().sort(function (a, b) {
+                    return a - b;
+                });
+                if (vi[0] === vj[0] && vi[1] === vj[1] && vi[2] === vj[2]) return j;
+            }
+            return -1;
+        }
+
+        function edgeNeighbors(i) {
+            var vi = faceVerts(i);
+            var out = [];
+            for (var j = 0; j < n; j++) {
+                if (j === i) continue;
+                var vj = faceVerts(j);
+                var shared = 0;
+                for (var k = 0; k < 3; k++) {
+                    if (vj.indexOf(vi[k]) >= 0) shared += 1;
+                }
+                if (shared === 2) out.push(j);
+            }
+            return out;
+        }
+
+        function center(i) {
+            var vs = faceVerts(i);
+            var x = 0;
+            var y = 0;
+            var z = 0;
+            for (var k = 0; k < 3; k++) {
+                x += vertices[vs[k]][0];
+                y += vertices[vs[k]][1];
+                z += vertices[vs[k]][2];
+            }
+            return [x, y, z];
+        }
+
+        var opp = [];
+        for (var i = 0; i < n; i++) {
+            opp[i] = oppositeIndex(i);
+        }
+
+        var labels = new Array(n);
+        var cap = 0;
+        labels[cap] = 20;
+        labels[opp[cap]] = 1;
+
+        var neigh = edgeNeighbors(cap);
+        var around = [2, 8, 14];
+        for (var k = 0; k < neigh.length && k < around.length; k++) {
+            labels[neigh[k]] = around[k];
+            labels[opp[neigh[k]]] = 21 - around[k];
+        }
+
+        var capC = center(cap);
+        function dotCap(i) {
+            var c = center(i);
+            return c[0] * capC[0] + c[1] * capC[1] + c[2] * capC[2];
+        }
+
+        var remainingEvens = [4, 6, 10, 12, 16, 18];
+        var hemisphere = [];
+        for (var i = 0; i < n; i++) {
+            if (labels[i] != null) continue;
+            if (dotCap(i) > 0) hemisphere.push(i);
+        }
+        hemisphere.sort(function (a, b) {
+            return dotCap(b) - dotCap(a);
+        });
+        for (var h = 0; h < hemisphere.length; h++) {
+            var even = remainingEvens[h];
+            if (even == null) break;
+            labels[hemisphere[h]] = even;
+            labels[opp[hemisphere[h]]] = 21 - even;
+        }
+
+        for (var i = 0; i < n; i++) {
+            if (labels[i] != null) continue;
+            for (var v = 20; v >= 1; v--) {
+                var taken = false;
+                for (var j = 0; j < n; j++) {
+                    if (labels[j] === v) {
+                        taken = true;
+                        break;
+                    }
+                }
+                if (!taken) {
+                    labels[i] = v;
+                    if (labels[opp[i]] == null) labels[opp[i]] = 21 - v;
+                    break;
+                }
+            }
+        }
+
+        for (var i = 0; i < n; i++) {
+            faces[i][3] = labels[i];
+        }
     }
 
     // HELPERS
@@ -844,17 +963,24 @@ const DICE = (function() {
     //determines which face is up after roll animation
     function get_dice_value(dice) {
         var vector = new THREE.Vector3(0, 0, dice.dice_type == 'd4' ? -1 : 1);
+        var orient = new THREE.Quaternion().copy(dice.body.quaternion);
+        if (dice.face_align) {
+            orient.multiply(dice.face_align);
+        }
         var closest_face, closest_angle = Math.PI * 2;
         for (var i = 0, l = dice.geometry.faces.length; i < l; ++i) {
             var face = dice.geometry.faces[i];
             if (face.materialIndex == 0) continue;
-            var angle = face.normal.clone().applyQuaternion(dice.body.quaternion).angleTo(vector);
+            var angle = face.normal.clone().applyQuaternion(orient).angleTo(vector);
             if (angle < closest_angle) {
                 closest_angle = angle;
                 closest_face = face;
             }
         }
-        var matindex = closest_face ? closest_face.materialIndex - 1 : -1; //todo: bug thrown here, sometimes closest_face = undefined
+        if (!closest_face) {
+            throw new Error('Could not read a face on ' + dice.dice_type);
+        }
+        var matindex = closest_face.materialIndex - 1;
         if (dice.dice_type == 'd100') matindex *= 10;
         if (dice.dice_type == 'd10' && matindex == 0) matindex = 10;
         return matindex;
@@ -868,26 +994,34 @@ const DICE = (function() {
         return values;
     }
 
-    function shift_dice_faces(dice, value, res) {
-        var r = CONSTS.dice_face_range[dice.dice_type];
-        if (dice.dice_type == 'd10' && value == 10) value = 0;
-        if (!(value >= r[0] && value <= r[1])) return;
-        var num = value - res;
-        var geom = dice.geometry.clone();
+    function numbered_face_normals(geom) {
+        var byMat = {};
         for (var i = 0, l = geom.faces.length; i < l; ++i) {
-            var matindex = geom.faces[i].materialIndex;
-            if (matindex == 0) continue;
-            matindex += num - 1;
-            while (matindex > r[1]) matindex -= r[1];
-            while (matindex < r[0]) matindex += r[1];
-            geom.faces[i].materialIndex = matindex + 1;
+            var face = geom.faces[i];
+            if (face.materialIndex == 0) continue;
+            if (!byMat[face.materialIndex]) {
+                byMat[face.materialIndex] = face.normal.clone();
+            }
         }
-        if (dice.dice_type == 'd4' && num != 0) {
-            if (num < 0) num += 4;
-            dice.material = new THREE.MeshFaceMaterial(
-                    create_d4_materials(vars.scale / 2, vars.scale * 2, CONSTS.d4_labels[num]));
+        return byMat;
+    }
+
+    function align_dice_face(dice, value, res) {
+        if (dice.dice_type == 'd10' && value == 10) value = 0;
+        if (value === res) return;
+        var normals = numbered_face_normals(dice.geometry);
+        var nRes = normals[res + 1];
+        var nVal = normals[value + 1];
+        if (!nRes || !nVal) {
+            throw new Error(
+                'Cannot align ' + dice.dice_type + ' face ' + value +
+                ' onto physics result ' + res
+            );
         }
-        dice.geometry = geom;
+        dice.face_align = new THREE.Quaternion().setFromUnitVectors(
+            nVal.clone().normalize(),
+            nRes.clone().normalize()
+        );
     }
     
     //playSound function disabled - no sound effects
